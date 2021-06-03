@@ -4,9 +4,10 @@ const puppeteer = require('puppeteer');
 const rand_url = "https://www.supremenewyork.com/shop/all";
 // CATEGORIES > jackets, shirts, sweatshirts, tops-sweaters, pants, shorts, hats, bags, accessories, shoes, skate
 const preferredCategoryName = "jackets"; 
-const prefferedTitle = "Supreme®/The North Face® Summit Series Outer Tape Seam Jacket";
+// const prefferedTitle = "Supreme®/The North Face® Summit Series Outer Tape Seam Jacket";
+const prefferedTitle = "Eagle Hooded Work Jacket";
 const prefferedColor = "Black";
-const prefferedSize = "Large";
+const prefferedSize = "XLarge";
 const prefferedQuantity = "4";
 
 
@@ -14,6 +15,12 @@ async function initBrowser(){
 
     const browser = await puppeteer.launch({headless: false});
     const page = await browser.newPage();
+    
+    const pages = await browser.pages();
+    if (pages.length > 1) {
+        await pages[0].close();
+    }
+
     await page.setViewport({
         width: 1920,
         height: 1080,
@@ -21,6 +28,7 @@ async function initBrowser(){
     });
     await page.goto(rand_url);
     return page;
+    
 
 }
 
@@ -56,7 +64,7 @@ async function selectAvailProdByCategory(page){
     }, itemAvailable, preferredCategoryName);
 
     await page.waitForTimeout(1000);
-
+    selectProdNameCat(page);
 }
 
 // Select Product by Product Name in a Category
@@ -67,8 +75,7 @@ async function selectProdNameCat(page){
     let itemTitle = await page.evaluate(el => el.textContent, titleElement);
 
     await page.waitForTimeout(1000);
-    console.log(prefferedTitle);
-    if( prefferedTitle == itemTitle){
+    if( prefferedTitle == itemTitle ){
         addToCart(page);
     }else{
         await page.$eval("a[class='next']", elem => elem.click()); // color picker
@@ -80,39 +87,63 @@ async function selectProdNameCat(page){
 
 // Bot on Add To Cart Page
 async function addToCart(page){
-    // Black Sizes > 85615, 85616, 85617, 85618
-    // Pink Sizes > 85611, 85612, 85613, 85614
-
     // Check if color option exist
-    if (await page.$("a[data-style-name='"+prefferedColor+"']#size") !== null){
+    const colorElement = await page.evaluate((prefferedColor) => {
+        const element = document.querySelector("a[data-style-name='"+prefferedColor+"']");        
+        return element;
+    }, prefferedColor);
+    if(colorElement !== null){
         await page.$eval("a[data-style-name='"+prefferedColor+"']", elem => elem.click()); // color picker
-        await page.waitForTimeout(1500);
     }
 
     // Check if sizes Exist
-    if (await page.$("select#size") !== null) {
-        await page.select("select#size", prefferedSize); // size select
-        await page.waitForTimeout(1500);
+    const sizeElement = await page.evaluate(() => {
+        const element = document.querySelector('select#size');        
+        return element;
+    });
+    if(sizeElement !== null){
+        let $elemHandler = await page.$('select#size');
+        let properties = await $elemHandler.getProperties();
+        for (const property of properties.values()) {
+            const element = property.asElement();
+            if (element){
+                let hText = await element.getProperty("text");
+                let text = await hText.jsonValue();
+                if(text===prefferedSize){
+                    let hValue = await element.getProperty("value");
+                    let value = await hValue.jsonValue();
+                    await page.select("select#size",value);
+                }
+            }
+        }
     }
 
     // Check if Quantity Exist
-    if (await page.$("select#qty") !== null) {
-        await page.select("select#size", prefferedQuantity); // size select
-        await page.waitForTimeout(1500);
+    const qtyElement = await page.evaluate(() => {
+        const element = document.querySelector('select#qty');        
+        return element;
+    });
+    if(qtyElement !== null){
+        await page.select("select#qty", prefferedQuantity); // Quantity select
     }
 
-    
-
-    await page.$eval("input[type='submit']", elem => elem.click()); // add to cart button
-    await page.waitForTimeout(1500);
-
-    await page.$eval("a[class='button checkout']", elem => elem.click()); // checkout button
-    await page.waitForTimeout(1500);
-    deliveryPage(page);
+    // Check if Add To Cart Button Exist
+    const addToCartElement = await page.evaluate(() => {
+        const element = document.querySelector("input[type='submit']");        
+        return element;
+    });
+    if(addToCartElement !== null){
+        await page.$eval("input[type='submit']", elem => elem.click()); // add to cart button
+        await page.waitForTimeout(1500);
+        await page.$eval("a[class='button checkout']", elem => elem.click()); // checkout button
+        checkoutFormPage(page); // Proceed to filling out checkout form
+    }else{
+        page.close();
+    }
 }
 
 // Bot on Delivery Page
-async function deliveryPage(page){
+async function checkoutFormPage(page){
     const creditCardNumber = "12312321321312321312";
     const ccnMonth = "10";
     const ccnYear = "2031";
