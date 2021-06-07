@@ -1,45 +1,75 @@
 const puppeteer = require('puppeteer');
+const useProxy = require('puppeteer-page-proxy');
 
 // Global Variables
 const rand_url = "https://www.supremenewyork.com/shop/all";
-// CATEGORIES > jackets, shirts, sweatshirts, tops-sweaters, pants, shorts, hats, bags, accessories, shoes, skate
-// const preferredCategoryName = "jackets";
-// const preferredTitle = "Supreme®/The North Face® Summit Series Outer Tape Seam Jacket";
-// const prefferedTitle = "Eagle Hooded Work Jacket";
-
-// const preferredCategoryName = "accessories";
-// const preferredTitle = "Supreme®/Hanes® Tagless Tank Tops (3 Pack)";
-/* <h1 data-category="Accessories" data-ino="SS21A41" data-rd="06/06/2021" data-rw="16SS21" itemprop="name">Supreme®/Hanes® Tagless Tank Tops <br>(3 Pack)</h1> */
-
-const preferredCategoryName = "skate";
-const preferredTitle = "Supreme®/Spitfire® Classic Wheels(Set of 4)";
-/* <h1 data-category="Skate" data-ino="SS21A81" data-rd="06/06/2021" data-rw="16SS21" itemprop="name">Supreme®/Spitfire® Classic Wheels<br>(Set of 4)</h1> */
-
-const preferredColor = "Black";
-const preferredSize = "XLarge";
-const preferredQuantity = "4";
+let preferredCategoryName = "";
+let preferredTitle = "";
+let preferredColor = "";
+let preferredSize = "";
+let preferredQuantity = "";
+let preferredBillingName = "";
+let preferredOrder_email = "";
+let preferredOrder_number = "";
+let preferredOrder_billing_address = "";
+let preferredOrder_billing_city = "";
+let preferredOrder_billing_zip = "";
+let preferredOrder_billing_state = "";
+let preferredCreditCardNumber = "";
+let preferredCcnMonth = "";
+let preferredCcnYear = "";
+let preferredCcnCVV = "";
 
 
 async function initBrowser(){
 
     const browser = await puppeteer.launch({headless: false});
-    const page = await browser.newPage();
-    
+    const page = await browser.newPage();    
+    // Set page viewport
+    await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1, });
+    // Close unused page
     const pages = await browser.pages();
     if (pages.length > 1) {
         await pages[0].close();
     }
-
-    await page.setViewport({
-        width: 1920,
-        height: 1080,
-        deviceScaleFactor: 1,
-    });
+    // // To set proxy per request
+    // await page.setRequestInterception(true);
+    // page.on('request', req => {
+    //     console.log(req);
+    //     useProxy(req, '107.178.9.186:8080');
+    // });
     await page.goto(rand_url);
     return page;
-    
-
 }
+
+async function checkout(userBot){
+    let x = 0;
+    for(var counter in userBot){
+        preferredCategoryName = userBot[counter]["preferredCategoryName"];
+        preferredTitle = userBot[counter]["preferredTitle"];
+        preferredColor = userBot[counter]["preferredColor"];
+        preferredSize = userBot[counter]["preferredSize"];
+        preferredQuantity = userBot[counter]["preferredQuantity"];
+        preferredBillingName = userBot[counter]["preferredBillingName"];
+        preferredOrder_email = userBot[counter]["preferredOrder_email"];
+        preferredOrder_number = userBot[counter]["preferredOrder_number"];
+        preferredOrder_billing_address = userBot[counter]["preferredOrder_billing_address"];
+        preferredOrder_billing_city = userBot[counter]["preferredOrder_billing_city"];
+        preferredOrder_billing_zip = userBot[counter]["preferredOrder_billing_zip"];
+        preferredOrder_billing_state = userBot[counter]["preferredOrder_billing_state"];
+        preferredCreditCardNumber = userBot[counter]["preferredCreditCardNumber"];
+        preferredCcnMonth = userBot[counter]["preferredCcnMonth"];
+        preferredCcnYear = userBot[counter]["preferredCcnYear"];
+        preferredCcnCVV = userBot[counter]["preferredCcnCVV"];
+        const pagecounter = await initBrowser();
+        removeSoldOutProduct(pagecounter);
+        
+    }
+    
+}
+
+module.exports = checkout;
+module.exports.checkout = checkout;
 
 // Remove sold out items
 async function removeSoldOutProduct(page){
@@ -153,53 +183,59 @@ async function addToCart(page){
 
 // Bot on Delivery Page
 async function checkoutFormPage(page){
-    const creditCardNumber = "12312321321312321312";
-    const ccnMonth = "10";
-    const ccnYear = "2031";
-    const ccnCVV = "123";
 
-
-
-    await page.type("input[id='order_billing_name']", "Lidel Kim Daddie"); // Write Full Name
+    await page.type("input[name='order[billing_name]']", preferredBillingName); // Write Full Name
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_email']", "test@test.com"); // Write Email
+    await page.type("input[name='order[email]']", preferredOrder_email); // Write Email
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_tel']", "+123 456 789 0"); // Write Phone Number
+    await page.type("input[name='order[tel]']", preferredOrder_number); // Write Phone Number
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_billing_address']", "49a Diamond Street Pag-Ibig Heights"); // Write Address
+    await page.type("input[name='order[billing_address]']", preferredOrder_billing_address); // Write Address
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_billing_city']", "Davao City"); // Write City
+    await page.type("input[name='order[billing_zip]']", preferredOrder_billing_zip); // Write Zip Code
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_billing_zip']", "8000"); // Write Zip Code
-    await page.waitForTimeout(1500);
-
-    await page.select("select#order_billing_state", " 青森県"); // Select State
-    await page.waitForTimeout(1500);
+    const order_billing_city = await page.evaluate(() => {
+        const element = document.querySelector("input[id='order_billing_city']");        
+        return element;
+    });
+    if(order_billing_city !== null){
+        await page.type("input[id='order_billing_city']", preferredOrder_billing_city); // Write City
+        await page.waitForTimeout(1500);
+    }
+    
+    const order_billing_state = await page.evaluate(() => {
+        const element = document.querySelector("select#order_billing_state");        
+        return element;
+    });
+    if(order_billing_state !== null){
+        await page.select("select#order_billing_state", preferredOrder_billing_state); // Select State
+        await page.waitForTimeout(1500);
+    }   
 
     /* Save address for future use | not usefull
-    const store_address = await page.$('input[id="store_address"]');
-    console.log(await (await store_address.getProperty('checked')).jsonValue());
-    await store_address.click(); // Check Store Address Checkbox
+        const store_address = await page.$('input[id="store_address"]');
+        console.log(await (await store_address.getProperty('checked')).jsonValue());
+        await store_address.click(); // Check Store Address Checkbox
     */
 
     await page.select("select#credit_card_type", "Credit Card"); // Select Credit Card Type > visa, american_express, master, jcb, cod
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='cnb']", creditCardNumber); // Write Credit Card Number
+    await page.type("input[id='cnb']", preferredCreditCardNumber); // Write Credit Card Number
     await page.waitForTimeout(1500);
 
-    await page.select("select#credit_card_month", ccnMonth); // Select Month
+    await page.select("select#credit_card_month", preferredCcnMonth); // Select Month
     await page.waitForTimeout(1500);
 
-    await page.select("select#credit_card_year", ccnYear); // Select Year
+    await page.select("select#credit_card_year", preferredCcnYear); // Select Year
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='vval']", ccnCVV); // Write Credit Card CVV
+    await page.type("input[id='vval']", preferredCcnCVV); // Write Credit Card CVV
     await page.waitForTimeout(1500);
     
     const order_terms = await page.$('input[id="order_terms"]');
@@ -211,11 +247,3 @@ async function checkoutFormPage(page){
 
     // Final step re captcha solver
 }
-
-async function checkout(){
-    const page = await initBrowser();
-    await removeSoldOutProduct(page);
-}
-
-// module.exports = checkout;
-module.exports.checkout = checkout;

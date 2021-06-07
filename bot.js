@@ -1,3 +1,74 @@
 const supreme = require("./shop/supreme");
 
-supreme.checkout();
+
+// CATEGORIES > jackets, shirts, sweatshirts, tops-sweaters, pants, shorts, hats, bags, accessories, shoes, skate
+// const preferredCategoryName = "jackets";
+// const preferredTitle = "Supreme®/The North Face® Summit Series Outer Tape Seam Jacket";
+// const prefferedTitle = "Eagle Hooded Work Jacket";
+
+// const preferredCategoryName = "accessories";
+// const preferredTitle = "Supreme®/Hanes® Tagless Tank Tops (3 Pack)";
+
+// const preferredCategoryName = "skate";
+// const preferredTitle = "Supreme®/Spitfire® Classic Wheels(Set of 4)";
+
+const userBot = {
+    bot1 : {
+        preferredCategoryName : "skate",
+        preferredTitle : "Supreme®/Spitfire® Classic Wheels(Set of 4)",
+        preferredColor : "Black", 
+        preferredSize : "XLarge", 
+        preferredQuantity : "4", 
+        preferredBillingName : "Test Three", 
+        preferredOrder_email : "testthree@testthree.com", 
+        preferredOrder_number : "123 456 789 0", 
+        preferredOrder_billing_address : "2181 PO BOX", 
+        preferredOrder_billing_city : "ALABASTER", 
+        preferredOrder_billing_zip : "35007-2024", 
+        preferredOrder_billing_state : "AL", 
+        preferredCreditCardNumber : 12312321321312321312, 
+        preferredCcnMonth : 10, 
+        preferredCcnYear : 2031, 
+        preferredCcnCVV : 123
+    },
+    bot2 : {
+        preferredCategoryName : "accessories",
+        preferredTitle : "Supreme®/Hanes® Tagless Tank Tops (3 Pack)",
+        preferredColor : "Black", 
+        preferredSize : "XLarge", 
+        preferredQuantity : "4", 
+        preferredBillingName : "Test Two", 
+        preferredOrder_email : "testtwo@testtwo.com", 
+        preferredOrder_number : "123 456 789 0", 
+        preferredOrder_billing_address : "2181 PO BOX", 
+        preferredOrder_billing_city : "ALABASTER", 
+        preferredOrder_billing_zip : "35007-2024", 
+        preferredOrder_billing_state : "AL", 
+        preferredCreditCardNumber : 12312321321312321312, 
+        preferredCcnMonth : 10, 
+        preferredCcnYear : 2031, 
+        preferredCcnCVV : 123
+    },
+    bot3 : {
+        preferredCategoryName : "jackets",
+        preferredTitle : "Eagle Hooded Work Jacket",
+        preferredColor : "Black", 
+        preferredSize : "XLarge", 
+        preferredQuantity : "4", 
+        preferredBillingName : "Test One", 
+        preferredOrder_email : "testone@testone.com", 
+        preferredOrder_number : "123 456 789 0", 
+        preferredOrder_billing_address : "2181 PO BOX", 
+        preferredOrder_billing_city : "ALABASTER", 
+        preferredOrder_billing_zip : "35007-2024", 
+        preferredOrder_billing_state : "AL", 
+        preferredCreditCardNumber : 12312321321312321312, 
+        preferredCcnMonth : 10, 
+        preferredCcnYear : 2031, 
+        preferredCcnCVV : 123
+    },
+
+}
+
+
+supreme.checkout(userBot);
