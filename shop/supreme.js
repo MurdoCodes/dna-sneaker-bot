@@ -3,6 +3,7 @@ const useProxy = require('puppeteer-page-proxy');
 
 // Global Variables
 const rand_url = "https://www.supremenewyork.com/shop/all";
+// const rand_url = "https://whatismyipaddress.com/";
 let preferredCategoryName = "";
 let preferredTitle = "";
 let preferredColor = "";
@@ -19,11 +20,18 @@ let preferredCreditCardNumber = "";
 let preferredCcnMonth = "";
 let preferredCcnYear = "";
 let preferredCcnCVV = "";
+let preferredProxyServer = "";
 
 
-async function initBrowser(){
+async function initBrowser(preferredProxyServer){
+    const proxyServer = '--proxy-server=' + preferredProxyServer;
 
-    const browser = await puppeteer.launch({headless: false});
+    const browser = await puppeteer.launch({
+        headless: false,
+        defaultViewport: null,
+        ignoreHTTPSErrors: true
+        // args: [ proxyServer ]
+    });
     const page = await browser.newPage();    
     // Set page viewport
     await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1, });
@@ -32,18 +40,13 @@ async function initBrowser(){
     if (pages.length > 1) {
         await pages[0].close();
     }
-    // // To set proxy per request
-    // await page.setRequestInterception(true);
-    // page.on('request', req => {
-    //     console.log(req);
-    //     useProxy(req, '107.178.9.186:8080');
-    // });
+    // Got to url
+    await page.setDefaultNavigationTimeout(0);
     await page.goto(rand_url);
     return page;
 }
 
 async function checkout(userBot){
-    let x = 0;
     for(var counter in userBot){
         preferredCategoryName = userBot[counter]["preferredCategoryName"];
         preferredTitle = userBot[counter]["preferredTitle"];
@@ -61,9 +64,12 @@ async function checkout(userBot){
         preferredCcnMonth = userBot[counter]["preferredCcnMonth"];
         preferredCcnYear = userBot[counter]["preferredCcnYear"];
         preferredCcnCVV = userBot[counter]["preferredCcnCVV"];
-        const pagecounter = await initBrowser();
-        removeSoldOutProduct(pagecounter);
-        
+        preferredProxyServer = userBot[counter]["preferredProxyServer"];
+
+        const pagecounter = await initBrowser(preferredProxyServer);
+        await removeSoldOutProduct(pagecounter);
+        await selectAvailProdByCategory(pagecounter);
+        selectProdNameCat(pagecounter, userBot[counter]);
     }
     
 }
@@ -81,10 +87,7 @@ async function removeSoldOutProduct(page){
         for(var i=0; i< elements.length; i++){
             elements[i].parentNode.parentNode.parentNode.removeChild(elements[i].parentNode.parentNode);
         }
-    }, itemSoldOut);
-
-    await page.waitForTimeout(1000);
-    selectAvailProdByCategory(page);
+    }, itemSoldOut);    
 }
 
 // Select Available Product By Category
@@ -101,21 +104,21 @@ async function selectAvailProdByCategory(page){
             }            
         }
     }, itemAvailable, preferredCategoryName);
-
-    await page.waitForTimeout(1000);
-    selectProdNameCat(page);
 }
 
 // Select Product by Product Name in a Category
-async function selectProdNameCat(page){
-
+async function selectProdNameCat(page, data){
+    console.log(data);
+    preferredTitle1 = data["preferredTitle"];
     await page.waitForSelector('h1[itemprop="name"]', {visible: true})
     let titleElement = await page.$('h1[itemprop="name"]');
     let itemTitle = await page.evaluate(el => el.textContent, titleElement);
-    console.log(itemTitle);
     await page.waitForTimeout(1000);
-    if( preferredTitle == itemTitle ){
-        addToCart(page);
+
+    console.log(preferredTitle1 + " = " + itemTitle);
+
+    if( preferredTitle1 == itemTitle ){
+        addToCart(page, data);
     }else{
         await page.$eval("a[class='next']", elem => elem.click()); // color picker
         await page.waitForTimeout(1500);
@@ -125,8 +128,9 @@ async function selectProdNameCat(page){
 }
 
 // Bot on Add To Cart Page
-async function addToCart(page){
+async function addToCart(page, data){
     // If color option exist
+    prefferedColor = data["preferredColor"];
     const colorElement = await page.evaluate((preferredColor) => {
         const element = document.querySelector("a[data-style-name='"+preferredColor+"']");        
         return element;
@@ -136,6 +140,7 @@ async function addToCart(page){
     }
 
     // If sizes Exist
+    preferredSize = data["preferredSize"];
     const sizeElement = await page.evaluate(() => {
         const element = document.querySelector('select#size');        
         return element;
@@ -158,6 +163,7 @@ async function addToCart(page){
     }
 
     // If Quantity Exist
+    preferredQuantity = data["preferredQuantity"];
     const qtyElement = await page.evaluate(() => {
         const element = document.querySelector('select#qty');        
         return element;
@@ -175,28 +181,42 @@ async function addToCart(page){
         await page.$eval("input[type='submit']", elem => elem.click()); // add to cart button
         await page.waitForTimeout(1500);
         await page.$eval("a[class='button checkout']", elem => elem.click()); // checkout button
-        checkoutFormPage(page); // Proceed to filling out checkout form
+        await page.waitForTimeout(5000);
+        checkoutFormPage(page, data); // Proceed to filling out checkout form
     }else{
         page.close();
     }
 }
 
 // Bot on Delivery Page
-async function checkoutFormPage(page){
+async function checkoutFormPage(page, data){
+    console.log(data);
+    preferredBillingName = data["preferredBillingName"];
+    preferredOrder_email = data["preferredOrder_email"];
+    preferredOrder_number = data["preferredOrder_number"];
+    preferredOrder_billing_address = data["preferredOrder_billing_address"];
+    preferredOrder_billing_zip = data["preferredOrder_billing_zip"];
+    preferredOrder_billing_city = data["preferredOrder_billing_city"];
+    preferredOrder_billing_state = data["preferredOrder_billing_state"];
+    preferredCreditCardNumber = data["preferredCreditCardNumber"];
+    preferredCcnMonth = data["preferredCcnMonth"];
+    preferredCcnYear = data["preferredCcnYear"];
+    preferredCcnCVV = data["preferredCcnCVV"];
 
-    await page.type("input[name='order[billing_name]']", preferredBillingName); // Write Full Name
+
+    await page.type("input[id='order_billing_name']", preferredBillingName); // Write Full Name
     await page.waitForTimeout(1500);
 
-    await page.type("input[name='order[email]']", preferredOrder_email); // Write Email
+    await page.type("input[id='order_email']", preferredOrder_email); // Write Email
     await page.waitForTimeout(1500);
 
-    await page.type("input[name='order[tel]']", preferredOrder_number); // Write Phone Number
+    await page.type("input[id='order_tel']", preferredOrder_number); // Write Phone Number
     await page.waitForTimeout(1500);
 
-    await page.type("input[name='order[billing_address]']", preferredOrder_billing_address); // Write Address
+    await page.type('input[name="order[billing_address]"]', preferredOrder_billing_address); // Write Address
     await page.waitForTimeout(1500);
 
-    await page.type("input[name='order[billing_zip]']", preferredOrder_billing_zip); // Write Zip Code
+    await page.type("input[id='order_billing_zip']", preferredOrder_billing_zip); // Write Zip Code
     await page.waitForTimeout(1500);
 
     const order_billing_city = await page.evaluate(() => {
@@ -223,8 +243,8 @@ async function checkoutFormPage(page){
         await store_address.click(); // Check Store Address Checkbox
     */
 
-    await page.select("select#credit_card_type", "Credit Card"); // Select Credit Card Type > visa, american_express, master, jcb, cod
-    await page.waitForTimeout(1500);
+    // await page.select("select#credit_card_type", "Credit Card"); // Select Credit Card Type > visa, american_express, master, jcb, cod
+    // await page.waitForTimeout(1500);
 
     await page.type("input[id='cnb']", preferredCreditCardNumber); // Write Credit Card Number
     await page.waitForTimeout(1500);

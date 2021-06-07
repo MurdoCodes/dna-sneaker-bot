@@ -13,23 +13,24 @@ const supreme = require("./shop/supreme");
 // const preferredTitle = "Supreme®/Spitfire® Classic Wheels(Set of 4)";
 
 const userBot = {
-    bot1 : {
-        preferredCategoryName : "skate",
-        preferredTitle : "Supreme®/Spitfire® Classic Wheels(Set of 4)",
+    bot1 : {        
+        preferredCategoryName : "jackets",
+        preferredTitle : "Eagle Hooded Work Jacket",
         preferredColor : "Black", 
         preferredSize : "XLarge", 
         preferredQuantity : "4", 
-        preferredBillingName : "Test Three", 
-        preferredOrder_email : "testthree@testthree.com", 
+        preferredBillingName : "Test One", 
+        preferredOrder_email : "testone@testone.com", 
         preferredOrder_number : "123 456 789 0", 
         preferredOrder_billing_address : "2181 PO BOX", 
         preferredOrder_billing_city : "ALABASTER", 
         preferredOrder_billing_zip : "35007-2024", 
         preferredOrder_billing_state : "AL", 
-        preferredCreditCardNumber : 12312321321312321312, 
-        preferredCcnMonth : 10, 
-        preferredCcnYear : 2031, 
-        preferredCcnCVV : 123
+        preferredCreditCardNumber : "12312321321312321312", 
+        preferredCcnMonth : "10", 
+        preferredCcnYear : "2031", 
+        preferredCcnCVV : "123",
+        preferredProxyServer : '216.21.18.193:80'
     },
     bot2 : {
         preferredCategoryName : "accessories",
@@ -44,29 +45,32 @@ const userBot = {
         preferredOrder_billing_city : "ALABASTER", 
         preferredOrder_billing_zip : "35007-2024", 
         preferredOrder_billing_state : "AL", 
-        preferredCreditCardNumber : 12312321321312321312, 
-        preferredCcnMonth : 10, 
-        preferredCcnYear : 2031, 
-        preferredCcnCVV : 123
+        preferredCreditCardNumber : "12312321321312321312", 
+        preferredCcnMonth : "10", 
+        preferredCcnYear : "2031", 
+        preferredCcnCVV : "123",
+        preferredProxyServer : '208.80.28.208:8080'
+
     },
     bot3 : {
-        preferredCategoryName : "jackets",
-        preferredTitle : "Eagle Hooded Work Jacket",
+        preferredCategoryName : "skate",
+        preferredTitle : "Supreme®/Spitfire® Classic Wheels(Set of 4)",
         preferredColor : "Black", 
         preferredSize : "XLarge", 
         preferredQuantity : "4", 
-        preferredBillingName : "Test One", 
-        preferredOrder_email : "testone@testone.com", 
+        preferredBillingName : "Test Three", 
+        preferredOrder_email : "testthree@testthree.com", 
         preferredOrder_number : "123 456 789 0", 
         preferredOrder_billing_address : "2181 PO BOX", 
         preferredOrder_billing_city : "ALABASTER", 
         preferredOrder_billing_zip : "35007-2024", 
         preferredOrder_billing_state : "AL", 
-        preferredCreditCardNumber : 12312321321312321312, 
-        preferredCcnMonth : 10, 
-        preferredCcnYear : 2031, 
-        preferredCcnCVV : 123
-    },
+        preferredCreditCardNumber : "12312321321312321312", 
+        preferredCcnMonth : "10", 
+        preferredCcnYear : "2031", 
+        preferredCcnCVV : "123",
+        preferredProxyServer : '216.21.18.194:80'
+    }
 
 }
 
