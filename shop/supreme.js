@@ -3,12 +3,21 @@ const puppeteer = require('puppeteer');
 // Global Variables
 const rand_url = "https://www.supremenewyork.com/shop/all";
 // CATEGORIES > jackets, shirts, sweatshirts, tops-sweaters, pants, shorts, hats, bags, accessories, shoes, skate
-const preferredCategoryName = "jackets"; 
-// const prefferedTitle = "Supreme®/The North Face® Summit Series Outer Tape Seam Jacket";
-const prefferedTitle = "Eagle Hooded Work Jacket";
-const prefferedColor = "Black";
-const prefferedSize = "XLarge";
-const prefferedQuantity = "4";
+// const preferredCategoryName = "jackets";
+// const preferredTitle = "Supreme®/The North Face® Summit Series Outer Tape Seam Jacket";
+// const prefferedTitle = "Eagle Hooded Work Jacket";
+
+// const preferredCategoryName = "accessories";
+// const preferredTitle = "Supreme®/Hanes® Tagless Tank Tops (3 Pack)";
+/* <h1 data-category="Accessories" data-ino="SS21A41" data-rd="06/06/2021" data-rw="16SS21" itemprop="name">Supreme®/Hanes® Tagless Tank Tops <br>(3 Pack)</h1> */
+
+const preferredCategoryName = "skate";
+const preferredTitle = "Supreme®/Spitfire® Classic Wheels(Set of 4)";
+/* <h1 data-category="Skate" data-ino="SS21A81" data-rd="06/06/2021" data-rw="16SS21" itemprop="name">Supreme®/Spitfire® Classic Wheels<br>(Set of 4)</h1> */
+
+const preferredColor = "Black";
+const preferredSize = "XLarge";
+const preferredQuantity = "4";
 
 
 async function initBrowser(){
@@ -73,9 +82,9 @@ async function selectProdNameCat(page){
     await page.waitForSelector('h1[itemprop="name"]', {visible: true})
     let titleElement = await page.$('h1[itemprop="name"]');
     let itemTitle = await page.evaluate(el => el.textContent, titleElement);
-
+    console.log(itemTitle);
     await page.waitForTimeout(1000);
-    if( prefferedTitle == itemTitle ){
+    if( preferredTitle == itemTitle ){
         addToCart(page);
     }else{
         await page.$eval("a[class='next']", elem => elem.click()); // color picker
@@ -87,16 +96,16 @@ async function selectProdNameCat(page){
 
 // Bot on Add To Cart Page
 async function addToCart(page){
-    // Check if color option exist
-    const colorElement = await page.evaluate((prefferedColor) => {
-        const element = document.querySelector("a[data-style-name='"+prefferedColor+"']");        
+    // If color option exist
+    const colorElement = await page.evaluate((preferredColor) => {
+        const element = document.querySelector("a[data-style-name='"+preferredColor+"']");        
         return element;
-    }, prefferedColor);
+    }, preferredColor);
     if(colorElement !== null){
-        await page.$eval("a[data-style-name='"+prefferedColor+"']", elem => elem.click()); // color picker
+        await page.$eval("a[data-style-name='"+preferredColor+"']", elem => elem.click()); // color picker
     }
 
-    // Check if sizes Exist
+    // If sizes Exist
     const sizeElement = await page.evaluate(() => {
         const element = document.querySelector('select#size');        
         return element;
@@ -109,7 +118,7 @@ async function addToCart(page){
             if (element){
                 let hText = await element.getProperty("text");
                 let text = await hText.jsonValue();
-                if(text===prefferedSize){
+                if(text===preferredSize){
                     let hValue = await element.getProperty("value");
                     let value = await hValue.jsonValue();
                     await page.select("select#size",value);
@@ -118,16 +127,16 @@ async function addToCart(page){
         }
     }
 
-    // Check if Quantity Exist
+    // If Quantity Exist
     const qtyElement = await page.evaluate(() => {
         const element = document.querySelector('select#qty');        
         return element;
     });
     if(qtyElement !== null){
-        await page.select("select#qty", prefferedQuantity); // Quantity select
+        await page.select("select#qty", preferredQuantity); // Quantity select
     }
 
-    // Check if Add To Cart Button Exist
+    // If Add To Cart Button Exist
     const addToCartElement = await page.evaluate(() => {
         const element = document.querySelector("input[type='submit']");        
         return element;
@@ -149,35 +158,39 @@ async function checkoutFormPage(page){
     const ccnYear = "2031";
     const ccnCVV = "123";
 
-    await page.type("input[id='order_billing_name'", "Lidel Kim Daddie"); // Write Full Name
+
+
+    await page.type("input[id='order_billing_name']", "Lidel Kim Daddie"); // Write Full Name
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_email'", "test@test.com"); // Write Email
+    await page.type("input[id='order_email']", "test@test.com"); // Write Email
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_tel'", "+123 456 789 0"); // Write Phone Number
+    await page.type("input[id='order_tel']", "+123 456 789 0"); // Write Phone Number
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_billing_zip'", "8000"); // Write Zip Code
+    await page.type("input[id='order_billing_address']", "49a Diamond Street Pag-Ibig Heights"); // Write Address
+    await page.waitForTimeout(1500);
+
+    await page.type("input[id='order_billing_city']", "Davao City"); // Write City
+    await page.waitForTimeout(1500);
+
+    await page.type("input[id='order_billing_zip']", "8000"); // Write Zip Code
     await page.waitForTimeout(1500);
 
     await page.select("select#order_billing_state", " 青森県"); // Select State
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='order_billing_city'", "Davao City"); // Write City
-    await page.waitForTimeout(1500);
-
-    await page.type("input[id='order_billing_address'", "49a Diamon Street Pag-Ibig Heights"); // Write Address
-    await page.waitForTimeout(1500);
-
+    /* Save address for future use | not usefull
     const store_address = await page.$('input[id="store_address"]');
     console.log(await (await store_address.getProperty('checked')).jsonValue());
     await store_address.click(); // Check Store Address Checkbox
+    */
 
-    await page.select("select#credit_card_type", "visa"); // Select Credit Card Type > visa, american_express, master, jcb, cod
+    await page.select("select#credit_card_type", "Credit Card"); // Select Credit Card Type > visa, american_express, master, jcb, cod
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='cnb'", creditCardNumber); // Write Credit Card Number
+    await page.type("input[id='cnb']", creditCardNumber); // Write Credit Card Number
     await page.waitForTimeout(1500);
 
     await page.select("select#credit_card_month", ccnMonth); // Select Month
@@ -186,7 +199,7 @@ async function checkoutFormPage(page){
     await page.select("select#credit_card_year", ccnYear); // Select Year
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='vval'", ccnCVV); // Write Credit Card CVV
+    await page.type("input[id='vval']", ccnCVV); // Write Credit Card CVV
     await page.waitForTimeout(1500);
     
     const order_terms = await page.$('input[id="order_terms"]');
@@ -195,6 +208,8 @@ async function checkoutFormPage(page){
 
     await page.$eval("input[class='button checkout']", elem => elem.click()); // checkout button
     await page.waitForTimeout(1500);
+
+    // Final step re captcha solver
 }
 
 async function checkout(){
