@@ -1,8 +1,12 @@
 const puppeteer = require('puppeteer');
+const {proxyRequest} = require('puppeteer-proxy');
 const useProxy = require('puppeteer-page-proxy');
+const ac = require('@antiadmin/anticaptchaofficial');
 
-// Global Variables
-const rand_url = "https://www.supremenewyork.com/shop/all";
+ac.setAPIKey(process.env.anticaptchaAPIKey);
+ac.getBalance()
+    .then(balance => console.log('my balance is: ' + balance))
+    .catch(error => console.log("an error with API key: " + error));
 
 // The function being called on the bot.js to trigger all functions
 async function checkout(userBotData){ 
@@ -13,35 +17,27 @@ module.exports = checkout;
 module.exports.checkout = checkout;
 
 async function initBrowser(userBotData){
+    const url = process.env.randomUrl + userBotData["preferredCategoryName"];
     let preferredProxyServer = userBotData["preferredProxyServer"];
-    const proxyServer = '--proxy-server=' + preferredProxyServer;
-
-    const browser = await puppeteer.launch({
+    const args = [
+        '--proxy-server=socks5://'+preferredProxyServer,
+    ];
+    const options = {      
         headless: false,
-        ignoreHTTPSErrors: true
-        // args: [ proxyServer ]
-    });
-    const page = await browser.newPage();   
-
-    // Set page viewport
-    // await page.setViewport({ width: 960, height: 900, deviceScaleFactor: 1, });
-    await page.setViewport({ width: 480, height: 450, deviceScaleFactor: 1, });
-    // Close unused page
-    const pages = await browser.pages();
-    if (pages.length > 1) {
-        await pages[0].close();
-    }   
-    
-    // Remove Page Timeout
-    await page.setDefaultNavigationTimeout(0);
-    // Got to url
-    await page.goto(rand_url);
-    selectAvailProdByCategory(page, userBotData);
+        ignoreHTTPSErrors: true,
+        args
+    };
+    const browser = await puppeteer.launch(options);
+    const page = await browser.newPage();
+    const pages = await browser.pages(); if (pages.length > 1) { await pages[0].close(); } // Close unused page    
+    await page.setViewport({ width: 1920, height: 912, deviceScaleFactor: 1, }); // Set page viewport
+    await page.setDefaultNavigationTimeout(0); // Remove Page Timeout 
+    await page.goto(url); // randomUrl1 || randomUrl2 Got to url
+    await removeSoldOutProduct(page);
     // return page;    
 }
 
 // Remove sold out items
-// await removeSoldOutProduct(page); useless
 async function removeSoldOutProduct(page){
     let itemSoldOut = ".sold_out_tag";
     await page.evaluate((itemSoldOut) => {
@@ -49,32 +45,34 @@ async function removeSoldOutProduct(page){
         for(var i=0; i< elements.length; i++){ 
             elements[i].parentNode.parentNode.parentNode.removeChild(elements[i].parentNode.parentNode);
         }
-    }, itemSoldOut);    
+    }, itemSoldOut);
+    await selectAvailProdByCategory(page, userBotData); // Proceed to function
 }
 
 // Select Available Product By Category
 async function selectAvailProdByCategory(page, userBotData){
     
-    let preferredCategoryName = userBotData["preferredCategoryName"];
-    let itemAvailable = ".inner-article";
-    await page.evaluate((itemAvailable, preferredCategoryName) => {        
+    let preferredTitle = userBotData["preferredTitle"];
+    let itemAvailable = "#container > li:nth-child(1) > div > div.product-name > a.name-link";
+    await page.evaluate((itemAvailable, preferredTitle) => {        
         var elements = document.querySelectorAll(itemAvailable); 
+        console.log(elements);
         for(var i=0; i< elements.length; i++){
-            const url = elements[i].children[0].getAttribute('href');
-            if(url.includes(preferredCategoryName)){
-                elements[i].children[0].click();
+            const url = elements[i].getAttribute('href');
+            if(url.includes(preferredTitle)){
+                elements[i].click();
             }            
         }
-    }, itemAvailable, preferredCategoryName);
-    await page.waitForSelector('h1[itemprop="name"]');
-    selectProdNameCat(page, userBotData);
+    }, itemAvailable, preferredTitle);
+    // await page.waitForSelector('h2[itemprop="name"]');
+    // selectProdNameCat(page, userBotData);
 }
 
 // Select Product by Product Name in a Category
 async function selectProdNameCat(page, userBotData){
-    
     let preferredTitle = userBotData["preferredTitle"];
-    let titleElement = await page.$('h1[itemprop="name"]');
+    let titleElement = await page.$('h2[itemprop="name"]');
+
     let itemTitle = await page.evaluate(el => el.textContent, titleElement);
     if( preferredTitle == itemTitle ){
         console.log("TRUE : " + preferredTitle + " = " + itemTitle);
@@ -99,15 +97,17 @@ async function addToCart(page, userBotData){
     // Check if class sold-out exist
     const soldOut = await page.evaluate((soldOut) => {
         const element = document.querySelector(".sold-out");
+        console.log(element);
         if(!element){
             return false
         }else{
             return true;
         }
     });
+    console.log("SoldOut"+soldOut);
     // If sold-out exist close browser return status
     if(soldOut === true){
-        page.close();
+        // page.close();
         console.log(preferredTitle + " is already Sold Out! Stop Process!");
     }else if(soldOut === false){
         console.log(preferredTitle + " is Available for Checkout! Continue Process!");
@@ -245,4 +245,22 @@ async function checkoutFormPage(page, userBotData){
     await page.waitForTimeout(1500);
 
     // Final step re captcha solver
+    const reCaptcha = await page.evaluate(() => {
+        const element = document.querySelector(".g-recaptcha");
+        let attribute = element.getAttribute('data-sitekey');
+        return attribute;
+    });
+    let token = await ac.solveRecaptchaV2EnterpriseProxyless( page.url(), reCaptcha)
+    .then(gresponse => {
+        console.log('g-response: '+gresponse);
+        return gresponse;
+    })
+    .catch(error => 
+        console.log('test received error '+error)
+    );
+    const textarea = await page.$eval('#g-recaptcha-response', (element, token) => {
+        element.value = token;
+        return element.value;
+    }, token);
+    console.log("TEXT AREA : " + textarea);
 }
