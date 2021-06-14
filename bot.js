@@ -52,7 +52,8 @@ const supreme = require("./shop/supreme");
 const userBotData = {
     bot1 : {
         preferredCategoryName : "accessories",
-        preferredTitle : "Supreme®/Hanes® Tagless Tank Tops (3 Pack)",
+        // preferredTitle : "Supreme®/Hanes® Tagless Tank Tops (3 Pack)",
+        preferredTitle : "Supreme®/Emilio Pucci® Cat Sunglasses",
         preferredColor : "White", 
         preferredSize : "Small", 
         preferredQuantity : "1", 

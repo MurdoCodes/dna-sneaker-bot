@@ -33,12 +33,12 @@ async function initBrowser(userBotData){
     await page.setViewport({ width: 1920, height: 912, deviceScaleFactor: 1, }); // Set page viewport
     await page.setDefaultNavigationTimeout(0); // Remove Page Timeout 
     await page.goto(url); // randomUrl1 || randomUrl2 Got to url
-    await removeSoldOutProduct(page);
+    await removeSoldOutProduct(page, userBotData); // Remove Sold out function
     // return page;    
 }
 
-// Remove sold out items
-async function removeSoldOutProduct(page){
+// Remove sold out items function
+async function removeSoldOutProduct(page, userBotData){
     let itemSoldOut = ".sold_out_tag";
     await page.evaluate((itemSoldOut) => {
         var elements = document.querySelectorAll(itemSoldOut);
@@ -46,30 +46,29 @@ async function removeSoldOutProduct(page){
             elements[i].parentNode.parentNode.parentNode.removeChild(elements[i].parentNode.parentNode);
         }
     }, itemSoldOut);
-    await selectAvailProdByCategory(page, userBotData); // Proceed to function
+    selectAvailProdByCategory(page, userBotData); // Proceed to function
 }
 
 // Select Available Product By Category
 async function selectAvailProdByCategory(page, userBotData){
-    
     let preferredTitle = userBotData["preferredTitle"];
-    let itemAvailable = "#container > li:nth-child(1) > div > div.product-name > a.name-link";
-    await page.evaluate((itemAvailable, preferredTitle) => {        
-        var elements = document.querySelectorAll(itemAvailable); 
-        console.log(elements);
-        for(var i=0; i< elements.length; i++){
-            const url = elements[i].getAttribute('href');
-            if(url.includes(preferredTitle)){
-                elements[i].click();
-            }            
-        }
-    }, itemAvailable, preferredTitle);
-    // await page.waitForSelector('h2[itemprop="name"]');
-    // selectProdNameCat(page, userBotData);
+    const option = (await page.$x(
+        '//*[@class = "name-link"][text() = "'+preferredTitle+'"]'
+    ))[0];    
+    if(option){        
+        console.log("Item Available!");
+        option.click();
+        await page.waitForSelector('h2[itemprop="name"]');
+        selectProdNameCat(page, userBotData);
+    }else{
+        console.log("Item Sold Out!");
+        page.close();
+    }    
 }
 
 // Select Product by Product Name in a Category
 async function selectProdNameCat(page, userBotData){
+
     let preferredTitle = userBotData["preferredTitle"];
     let titleElement = await page.$('h2[itemprop="name"]');
 
@@ -96,7 +95,7 @@ async function addToCart(page, userBotData){
 
     // Check if class sold-out exist
     const soldOut = await page.evaluate((soldOut) => {
-        const element = document.querySelector(".sold-out");
+        const element = document.querySelector("b.sold-out");
         console.log(element);
         if(!element){
             return false
@@ -104,19 +103,20 @@ async function addToCart(page, userBotData){
             return true;
         }
     });
-    console.log("SoldOut"+soldOut);
+
     // If sold-out exist close browser return status
     if(soldOut === true){
-        // page.close();
         console.log(preferredTitle + " is already Sold Out! Stop Process!");
+        page.close();        
     }else if(soldOut === false){
-        console.log(preferredTitle + " is Available for Checkout! Continue Process!");
-        // If sold-out does not exist continue checkout        
+        // If sold-out does not exist continue checkout  
+        console.log(preferredTitle + " is Available for Checkout! Continue Process!");              
         // If color option exist        
         const colorElement = await page.evaluate((preferredColor) => {
             const element = document.querySelector("a[data-style-name='"+preferredColor+"']");        
             return element;
         }, preferredColor);
+
         if(colorElement !== null){
             await page.$eval("a[data-style-name='"+preferredColor+"']", elem => elem.click()); // color picker
         }
@@ -157,12 +157,14 @@ async function addToCart(page, userBotData){
         });
         if(addToCartElement !== null){
             await page.$eval("input[type='submit']", elem => elem.click()); // add to cart button
-            await page.waitForTimeout(1500);
+            await page.waitForSelector("a[class='button checkout']", {visible: true});
             await page.$eval("a[class='button checkout']", elem => elem.click()); // checkout button
             try {
                 await page.waitForSelector('input#order_billing_name');
                 checkoutFormPage(page, userBotData); 
             } catch (e) {
+                await page.waitForSelector('input#order_billing_name');
+                checkoutFormPage(page, userBotData); 
                 console.log('Element Does Not Exist');
             }
         }
@@ -225,7 +227,7 @@ async function checkoutFormPage(page, userBotData){
     // await page.select("select#credit_card_type", "Credit Card"); // Select Credit Card Type > visa, american_express, master, jcb, cod
     // await page.waitForTimeout(1500);
 
-    await page.type("input[id='cnb']", preferredCreditCardNumber); // Write Credit Card Number
+    await page.type("input[id='rnsnckrn']", preferredCreditCardNumber); // Write Credit Card Number
     await page.waitForTimeout(1500);
 
     await page.select("select#credit_card_month", preferredCcnMonth); // Select Month
@@ -234,14 +236,14 @@ async function checkoutFormPage(page, userBotData){
     await page.select("select#credit_card_year", preferredCcnYear); // Select Year
     await page.waitForTimeout(1500);
 
-    await page.type("input[id='vval']", preferredCcnCVV); // Write Credit Card CVV
+    await page.type("input[id='orcer']", preferredCcnCVV); // Write Credit Card CVV
     await page.waitForTimeout(1500);
     
     const order_terms = await page.$('input[id="order_terms"]');
     console.log(await (await order_terms.getProperty('checked')).jsonValue());
     await order_terms.click(); // Check Order Terms
 
-    await page.$eval("input[class='button checkout']", elem => elem.click()); // checkout button
+    await page.$eval("input[name='commit']", elem => elem.click()); // checkout button
     await page.waitForTimeout(1500);
 
     // Final step re captcha solver
