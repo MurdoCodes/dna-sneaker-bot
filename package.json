@@ -5,7 +5,7 @@
   "main": "bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node bot.js",
+    "start": "electron .",
     "nodedev": "nodemon bot.js"
   },
   "keywords": [],
@@ -19,9 +19,7 @@
     "dotenv": "^10.0.0",
     "font-awesome": "^4.7.0",
     "jquery": "^3.6.0",
-    "puppeteer": "^9.1.1",
-    "puppeteer-page-proxy": "^1.2.8",
-    "puppeteer-proxy": "^2.1.2"
+    "puppeteer": "^9.1.1"
   },
   "devDependencies": {
     "electron": "^13.1.2"

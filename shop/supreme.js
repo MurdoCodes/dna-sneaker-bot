@@ -1,6 +1,4 @@
 const puppeteer = require('puppeteer');
-const {proxyRequest} = require('puppeteer-proxy');
-const useProxy = require('puppeteer-page-proxy');
 const ac = require('@antiadmin/anticaptchaofficial');
 
 ac.setAPIKey(process.env.anticaptchaAPIKey);
@@ -31,8 +29,9 @@ async function initBrowser(userBotData){
     const page = await browser.newPage();
     const pages = await browser.pages(); if (pages.length > 1) { await pages[0].close(); } // Close unused page    
     await page.setViewport({ width: 1920, height: 912, deviceScaleFactor: 1, }); // Set page viewport
-    await page.setDefaultNavigationTimeout(0); // Remove Page Timeout 
-    await page.goto(url); // randomUrl1 || randomUrl2 Got to url
+    page.setDefaultNavigationTimeout(0);
+    page.setDefaultTimeout(0);
+    await page.goto(url, {waitUntil: 'load', timeout: 0}); // randomUrl1 || randomUrl2 Got to url
     await removeSoldOutProduct(page, userBotData); // Remove Sold out function
     // return page;    
 }
@@ -51,6 +50,7 @@ async function removeSoldOutProduct(page, userBotData){
 
 // Select Available Product By Category
 async function selectAvailProdByCategory(page, userBotData){
+    let preferredCategoryName = userBotData["preferredCategoryName"];
     let preferredTitle = userBotData["preferredTitle"];
     const option = (await page.$x(
         '//*[@class = "name-link"][text() = "'+preferredTitle+'"]'
@@ -58,11 +58,23 @@ async function selectAvailProdByCategory(page, userBotData){
     if(option){        
         console.log("Item Available!");
         option.click();
-        await page.waitForSelector('h2[itemprop="name"]');
+        await page.waitForSelector('[itemprop="name"]');
         selectProdNameCat(page, userBotData);
     }else{
-        console.log("Item Sold Out!");
-        page.close();
+        let itemAvailable = ".inner-article";
+        await page.evaluate((itemAvailable, preferredCategoryName) => {        
+            var elements = document.querySelectorAll(itemAvailable); 
+            for(var i=0; i< elements.length; i++){
+                const url = elements[i].children[0].getAttribute('href');
+                if(url.includes(preferredCategoryName)){
+                    elements[i].children[0].click();
+                }            
+            }
+        }, itemAvailable, preferredCategoryName);
+
+        await page.waitForSelector('[itemprop="name"]');
+        selectProdNameCat(page, userBotData);
+        // page.close();
     }    
 }
 
@@ -70,8 +82,8 @@ async function selectAvailProdByCategory(page, userBotData){
 async function selectProdNameCat(page, userBotData){
 
     let preferredTitle = userBotData["preferredTitle"];
-    let titleElement = await page.$('h2[itemprop="name"]');
-
+    let titleElement = await page.$('[itemprop="name"]');
+    
     let itemTitle = await page.evaluate(el => el.textContent, titleElement);
     if( preferredTitle == itemTitle ){
         console.log("TRUE : " + preferredTitle + " = " + itemTitle);
@@ -247,22 +259,31 @@ async function checkoutFormPage(page, userBotData){
     await page.waitForTimeout(1500);
 
     // Final step re captcha solver
-    const reCaptcha = await page.evaluate(() => {
+    const captchaSiteKey = await page.evaluate(() => {
         const element = document.querySelector(".g-recaptcha");
         let attribute = element.getAttribute('data-sitekey');
         return attribute;
     });
-    let token = await ac.solveRecaptchaV2EnterpriseProxyless( page.url(), reCaptcha)
-    .then(gresponse => {
-        console.log('g-response: '+gresponse);
-        return gresponse;
-    })
-    .catch(error => 
-        console.log('test received error '+error)
-    );
-    const textarea = await page.$eval('#g-recaptcha-response', (element, token) => {
-        element.value = token;
-        return element.value;
-    }, token);
-    console.log("TEXT AREA : " + textarea);
+
+    if(captchaSiteKey){
+
+        let captchaResponseToken = await ac.solveRecaptchaV2Proxyless( page.url(), captchaSiteKey )
+        .then(gresponse => {
+            console.log('Solving ReCaptcha!')
+            return gresponse;
+        })
+        .catch(error => 
+            console.log('Error ReCaptcha Solving '+error)
+        );
+
+        if(captchaResponseToken){
+            await page.evaluate(`document.getElementById("g-recaptcha-response").innerHTML="${captchaResponseToken}";`);
+            console.log('ReCaptcha Solved! Finalizing Checkout!')
+            page.evaluate(`document.getElementById("checkout_form").submit();`);
+        }else{
+            console.log("Invalid ReCaptcha");
+        }  
+
+    }
+    
 }
