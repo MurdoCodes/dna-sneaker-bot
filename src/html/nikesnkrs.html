@@ -3,26 +3,66 @@
   <head>
     <meta charset="UTF-8">
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    
-    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
-    <title>DNA Sneaker Bot - Nike SNKRS</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *; style-src	'self' 'unsafe-inline' *; img-src 'self' data: *">
+    <title>DNA Sneaker Bot</title>
+    <link rel="stylesheet" href="../../node_modules/bootstrap/dist/css/bootstrap.min.css">
+    <script src="https://kit.fontawesome.com/7ddabce9f8.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="../assets/css/defaults.css">   
+    <link rel="stylesheet" href="../assets/css/sidebar.css">
+    <link rel="stylesheet" href="../assets/css/style.css">    
   </head>
   <body>
     
-    <div class="container">
-        <h1>This is Nike SNKRS</h1>
-        <img src="../assets//img/nikesnkrs.jpg" alt="" id="nikesnkrs-logo" class="disabled">
-    </div>
+    <nav class="navbar">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="../html/index.html">
+            <img src="../assets/img/logo.png" alt="" id="Distribution & Associates LLC">
+          </a>
 
-    <div id="logo-container">
-        <div class="logo-item">
-            <img src="../assets//img/nikesnkrs.jpg" alt="" id="nikesnkrs-logo" class="disabled">
+          <button type="button" id="sidebarCollapse" class="btn btn-info navbar-btn">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+    </nav>
+    <div class="wrapper">
+        <!-- Sidebar Holder -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <img src="../assets//img/nikesnkrs.jpg" alt="" id="Distribution & Associates LLC - NikeSnkrs">
+            </div>
+
+            <ul class="list-unstyled components">
+                <li class="active">
+                  <a href="#">Dashboard</a>
+                </li>
+                <li>
+                  <a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false">Task</a>
+                  <ul class="collapse list-unstyled" id="pageSubmenu">
+                      <li><a href="#">View All Task</a></li>
+                      <li><a href="#">Create Task</a></li>
+                  </ul>
+                </li>
+                <li>
+                  <a href="#">Accounts</a>
+                </li>
+                <li>
+                  <a href="#">Billing</a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Page Content Holder -->
+        <div id="content">
+            
         </div>
     </div>
 
     <!-- You can also require other files to run in this process -->
+    <script>window.$ = window.jQuery = require('jquery');</script>
+    <script>require('@popperjs/core');</script>
+    <script>require('bootstrap');</script>
+    <script src="../assets//js/sidebar.js"></script>
     <script src="../assets//js/script.js"></script>
   </body>
 </html>

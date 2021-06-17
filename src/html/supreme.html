@@ -59,12 +59,10 @@
     </div>
 
     <!-- You can also require other files to run in this process -->
-    <!-- <script src="../../node_modules/jquery/dist/jquery.min.js"></script> -->
-    <script src="../assets/js/jquery-3.6.0.min.js"></script>
-    <script src="../../node_modules/jquery/dist/jquery.slim.min.js"></script>
-    <script src="../../node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="../../node_modules/@popperjs/core/dist/umd/popper.js"></script>
+    <script>window.$ = window.jQuery = require('jquery');</script>
+    <script>require('@popperjs/core');</script>
+    <script>require('bootstrap');</script>
     <script src="../assets//js/sidebar.js"></script>
-    <!-- <script src="../assets//js/script.js"></script> -->
+    <script src="../assets//js/script.js"></script>
   </body>
 </html>
