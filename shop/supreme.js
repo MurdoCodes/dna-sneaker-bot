@@ -83,7 +83,6 @@ async function selectProdNameCat(page, userBotData){
 
     let preferredTitle = userBotData["preferredTitle"];
     let titleElement = await page.$('[itemprop="name"]');
-    
     let itemTitle = await page.evaluate(el => el.textContent, titleElement);
     if( preferredTitle == itemTitle ){
         console.log("TRUE : " + preferredTitle + " = " + itemTitle);

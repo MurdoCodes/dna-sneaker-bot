@@ -1,24 +1,31 @@
-const {app, BrowserWindow, ipcMain, Menu, Notification } = require('electron')
+const {
+    app, 
+    BrowserWindow,
+    Menu,
+    ipcMain,
+    session,
+    ipcRenderer
+} = require('electron')
 const dotenv = require('dotenv').config();
-const mysql = require('mysql');
 const path = require('path')
 const supreme = require("./shop/supreme");
+
+let mainWindow;
 
 function createWindow () {
     // Create the browser window.
     const mainWindow = new BrowserWindow({
-        width: 800,
-        height: 600,
         webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
-        nodeIntegration: true,
-        contextIsolation: false
+            nodeIntegration: true,
+            contextIsolation: false
         }
     });
     mainWindow.maximize();
 
     // and load the index.html of the app.
-    mainWindow.loadFile('./src/html/index.html');
+    // mainWindow.loadFile(`${__dirname}/src/html/index.html`);
+    mainWindow.loadURL(`${__dirname}/src/html/index.html`);   
+
     // Menu
     const template = [];
     const menu = Menu.buildFromTemplate(template);
@@ -28,20 +35,50 @@ function createWindow () {
     mainWindow.webContents.openDevTools();
 }
 
-// Once our app is ready, we create an window and load index.html
-app.whenReady().then(() => {
+app.whenReady().then(() => { // Once our app is ready, we create an window and load index.html
     createWindow();  
     app.on('activate', function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
+
+    session.defaultSession.clearStorageData([], function (data) {})
+    ipcMain.on('check-session', (event, arg) =>{
+        session.defaultSession.cookies.get({ url: 'https://sneaker-bot.com' })
+        .then((cookies) => {
+            event.reply('checksession-response', cookies)
+        }).catch((error) => {
+            console.log(error)
+        })
+    })
+    
+    ipcMain.on('session-message', (event, arg) => { // Render Login Values From login form
+        session.defaultSession.clearStorageData([], function (data) {})
+        const cookie = arg;
+        session.defaultSession.cookies.set(cookie)
+        .then(() => {
+            session.defaultSession.cookies.get({ url: 'https://sneaker-bot.com' })
+            .then((cookies) => {
+                event.reply('session-response', cookies)
+            }).catch((error) => {
+                console.log(error)
+            })
+        }, (error) => {
+            console.error(error)
+        });
+    })
+
+    ipcMain.on('logout-session', (event, arg) =>{
+        session.defaultSession.clearStorageData([], function (data) {
+            console.log("Session" + data)
+        })
+    })
 });
 
 app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') app.quit();
 });
 
-// CATEGORIES > jackets, shirts, sweatshirts, tops-sweaters, pants, shorts, hats, bags, accessories, shoes, skate
-const userBotData = {
+const userBotData = { // CATEGORIES > jackets, shirts, sweatshirts, tops-sweaters, pants, shorts, hats, bags, accessories, shoes, skate
     bot1 : {
         preferredCategoryName : "accessories",
         // preferredTitle : "Supreme®/Hanes® Tagless Tank Tops (3 Pack)",
@@ -126,4 +163,3 @@ const userBotData = {
 // for(var counter in userBotData){        
 //     supreme.checkout(userBotData[counter]);
 // }
-
